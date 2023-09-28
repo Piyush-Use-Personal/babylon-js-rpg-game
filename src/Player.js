@@ -4,25 +4,33 @@ import Utils from "./Utils";
 export default class Player {
   constructor(scene) {
     this.controls = {
-      inAir:true
+      inAir: true,
+      shiftPressed: false, // Add a flag for Shift key press
     }
     this.scene = scene
     this.scene.actionManager = new BABYLON.ActionManager(this.scene);
-    this.scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger,  (evt) => {
+    this.scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger, (evt) => {
       this.controls[evt.sourceEvent.keyCode] = evt.sourceEvent.type === "keydown";
+      console.log({
+        keyCode: evt.sourceEvent.keyCode
+      })
     }));
 
-    this.scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyUpTrigger,  (evt) => {
+    this.scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyUpTrigger, (evt) => {
       this.controls[evt.sourceEvent.keyCode] = evt.sourceEvent.type === "keydown";
     }));
 
     this.moveSpeed = 1
-    this.velocity = new BABYLON.Vector3(0,0,0)
+    this.runSpeedMultiplier = 2
+    this.velocity = new BABYLON.Vector3(0, 0, 0)
     this.prevTime = performance.now();
   }
 
   setAnimations(anims) {
     this.animationGroups = anims
+    console.log({
+      group: this.animationGroups
+    })
   }
 
   move() {
@@ -30,7 +38,7 @@ export default class Player {
 
       let time = performance.now();
       // Create a delta value based on current time
-      let delta = ( time - this.prevTime ) / 1000;
+      let delta = (time - this.prevTime) / 1000;
 
       // Set the velocity.x and velocity.z using the calculated time delta
       // this.velocity.x -= this.velocity.x * 10.0 * delta;
@@ -47,7 +55,17 @@ export default class Player {
 
 
       if (this.controls["87"]) {
-        this.mesh.moveWithCollisions(new BABYLON.Vector3(-parseFloat(Math.sin(rotation.y)) / this.moveSpeed, 0, -parseFloat(Math.cos(rotation.y)) / this.moveSpeed))
+        if (this.controls["16"]) {
+          // Shift key pressed with "W"
+          this.moveSpeed = 10 * this.runSpeedMultiplier; // Adjust the speed as needed
+        } else {
+          this.moveSpeed = 1; // Reset moveSpeed to default when Shift is released
+        }
+        this.mesh.moveWithCollisions(new BABYLON.Vector3(
+          -parseFloat(Math.sin(rotation.y)) / this.moveSpeed,
+          0,
+          -parseFloat(Math.cos(rotation.y)) / this.moveSpeed)
+        )
         Utils.getAnimationByName('run', this.animationGroups).play(true)
       } else {
         Utils.getAnimationByName('run', this.animationGroups).stop()
@@ -59,10 +77,25 @@ export default class Player {
         Utils.getAnimationByName('walk_back', this.animationGroups).stop()
       }
       if (this.controls["68"]) {
-        this.mesh.rotate(BABYLON.Axis.Y,0.01, BABYLON.Space.WORLD);
+        this.mesh.rotate(BABYLON.Axis.Y, 0.01, BABYLON.Space.WORLD);
       }
       if (this.controls["65"]) {
-        this.mesh.rotate(BABYLON.Axis.Y,-0.01, BABYLON.Space.WORLD)
+        this.mesh.rotate(BABYLON.Axis.Y, -0.01, BABYLON.Space.WORLD)
+      }
+      if (this.controls['82']) { // R
+        Utils.getAnimationByName('gun_reload', this.animationGroups).play(true)
+      } else {
+        Utils.getAnimationByName('gun_reload', this.animationGroups).stop()
+      }
+      if (this.controls['76']) { // L
+        Utils.getAnimationByName('landing', this.animationGroups).play(true)
+      } else {
+        Utils.getAnimationByName('landing', this.animationGroups).stop()
+      }
+      if (this.controls['70']) { // F
+        Utils.getAnimationByName('pick_pistol', this.animationGroups).play(true)
+      } else {
+        Utils.getAnimationByName('pick_pistol', this.animationGroups).stop()
       }
 
       Utils.getAnimationByName('air', this.animationGroups).play(true)
